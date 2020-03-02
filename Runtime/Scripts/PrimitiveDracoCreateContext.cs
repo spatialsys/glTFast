@@ -53,6 +53,10 @@ namespace GLTFast {
                 Profiler.EndSample();
             }
 
+            Profiler.BeginSample("UploadMeshData");
+            mesh.UploadMeshData(true);
+            Profiler.EndSample();
+
             return new Primitive(mesh,materials);
         }
     }
