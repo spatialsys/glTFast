@@ -20,7 +20,9 @@ namespace GLTFast {
         public Vector3[] positions;
         public Vector3[] normals;
         public Vector2[] uvs0;
+#if LEGACY_MESH
         public Vector2[] uvs1;
+#endif
         public Vector4[] tangents;
         public Color32[] colors32;
         public Color[] colors;
@@ -119,7 +121,7 @@ namespace GLTFast {
             MeshUpdateFlags flags = (MeshUpdateFlags)~0;
             int vadLen = 1;
             if(uvs0!=null) vadLen++;
-            if(uvs1!=null) vadLen++;
+            // if(uvs1!=null) vadLen++;
             if(normals!=null || calculateNormals)
                 vadLen++;
             if(tangents!=null || calculateTangents)
@@ -133,10 +135,10 @@ namespace GLTFast {
                 vad[vadCount] = new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2, vadCount);
                 vadCount++;
             }
-            if(uvs1!=null) {
-                vad[vadCount] = new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 2, vadCount);
-                vadCount++;
-            }
+            // if(uvs1!=null) {
+            //     vad[vadCount] = new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 2, vadCount);
+            //     vadCount++;
+            // }
             if(normals!=null || calculateNormals) {
                 vad[vadCount] = new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3, vadCount);
                 vadCount++;
@@ -161,12 +163,12 @@ namespace GLTFast {
                 vadCount++;
                 Profiler.EndSample();
             }
-            if(uvs1!=null) {
-                Profiler.BeginSample("SetUVs1");
-                msh.SetVertexBufferData(uvs1,0,0,uvs1.Length,vadCount,flags);
-                vadCount++;
-                Profiler.EndSample();
-            }
+            // if(uvs1!=null) {
+            //     Profiler.BeginSample("SetUVs1");
+            //     msh.SetVertexBufferData(uvs1,0,0,uvs1.Length,vadCount,flags);
+            //     vadCount++;
+            //     Profiler.EndSample();
+            // }
             if(normals!=null) {
                 Profiler.BeginSample("SetNormals");
                 msh.SetVertexBufferData(normals,0,0,normals.Length,vadCount,flags);
