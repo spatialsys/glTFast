@@ -14,7 +14,9 @@ using UnityEngine.Events;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+#if BURST
 using Unity.Mathematics;
+#endif
 using System.Runtime.InteropServices;
 #if KTX_UNITY
 using KtxUnity;
@@ -1467,7 +1469,7 @@ namespace GLTFast {
                         var jobUv = new Jobs.GetUVsUInt8Job();
                         fixed( void* src = &(buffer[start]) ) {
                             jobUv.input = (byte*) src;
-                            jobUv.result = (float2*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(result);
+                            jobUv.result = (Vector2*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(result);
                         }
                         jobHandle = jobUv.Schedule(uvAccessor.count,DefaultBatchCount);
                     }
