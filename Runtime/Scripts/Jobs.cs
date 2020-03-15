@@ -10,11 +10,6 @@ using Unity.Jobs;
 
 namespace GLTFast.Jobs {
 
-    static class Constants {
-        public const float UINT16_MAX = 65535f;
-        public const float INT16_MAX = 32767f;
-    }
-
     public unsafe struct CreateIndicesJob : IJobParallelFor  {
 
         [ReadOnly]
@@ -81,7 +76,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.UInt16* input;
+        public ushort* input;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
@@ -99,7 +94,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.UInt16* input;
+        public ushort* input;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
@@ -115,7 +110,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.UInt32* input;
+        public uint* input;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
@@ -131,7 +126,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.UInt32* input;
+        public uint* input;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
@@ -183,7 +178,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.UInt16* input;
+        public ushort* input;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
@@ -191,8 +186,8 @@ namespace GLTFast.Jobs {
 
         public void Execute(int i)
         {
-            result[i].x = input[i*2] / Constants.UINT16_MAX;
-            result[i].y = 1 - input[i*2+1] / Constants.UINT16_MAX;
+            result[i].x = input[i*2] / (float) ushort.MaxValue;
+            result[i].y = 1 - input[i*2+1] / (float) ushort.MaxValue;
         }
     }
 
@@ -200,7 +195,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.UInt16* input;
+        public ushort* input;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
@@ -300,7 +295,7 @@ namespace GLTFast.Jobs {
         public void Execute(int i)
         {
             float* resultV = (float*) (((byte*)result) + (i*outputByteStride));
-            System.UInt16* uv = (System.UInt16*) (input + inputByteStride*i);
+            ushort* uv = (ushort*) (input + inputByteStride*i);
             *resultV = *uv;
             *(resultV+1) = 1 - *(uv+1);
         }
@@ -326,9 +321,9 @@ namespace GLTFast.Jobs {
         public void Execute(int i)
         {
             float* resultV = (float*) (((byte*)result) + (i*outputByteStride));
-            System.UInt16* uv = (System.UInt16*) (input + inputByteStride*i);
-            *resultV = *uv / Constants.UINT16_MAX;
-            *(resultV+1) = 1 - *(uv+1) / Constants.UINT16_MAX;
+            ushort* uv = (ushort*) (input + inputByteStride*i);
+            *resultV = *uv / (float) ushort.MaxValue;
+            *(resultV+1) = 1 - *(uv+1) / (float) ushort.MaxValue;
         }
     }
 
@@ -340,7 +335,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.Int16* input;
+        public short* input;
 
         [ReadOnly]
         public int outputByteStride;
@@ -352,7 +347,7 @@ namespace GLTFast.Jobs {
         public void Execute(int i)
         {
             float* resultV = (float*) (((byte*)result) + (i*outputByteStride));
-            System.Int16* uv = (System.Int16*) (input + inputByteStride*i);
+            short* uv = (short*) (input + inputByteStride*i);
             *resultV = *uv;
             *(resultV+1) = 1 - *(uv+1);
         }
@@ -366,7 +361,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.Int16* input;
+        public short* input;
 
         [ReadOnly]
         public int outputByteStride;
@@ -378,9 +373,9 @@ namespace GLTFast.Jobs {
         public void Execute(int i)
         {
             float* resultV = (float*) (((byte*)result) + (i*outputByteStride));
-            System.Int16* uv = (System.Int16*) (input + inputByteStride*i);
-            *resultV = Mathf.Max( *uv / Constants.INT16_MAX, -1.0f);
-            *(resultV) = 1 - Mathf.Max( *(uv+1) / Constants.INT16_MAX, -1.0f);
+            short* uv = (short*) (input + inputByteStride*i);
+            *resultV = Mathf.Max( *uv / (float) short.MaxValue, -1.0f);
+            *(resultV) = 1 - Mathf.Max( *(uv+1) / (float) short.MaxValue, -1.0f);
         }
     }
 
@@ -439,76 +434,141 @@ namespace GLTFast.Jobs {
     public unsafe struct GetColorsVec3FloatJob : IJobParallelFor {
 
         [ReadOnly]
-        [NativeDisableUnsafePtrRestriction]
-        public float* input;
+        public int inputByteStride;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public Color* result;
+        public float* input;
+
+        [WriteOnly]
+        public NativeArray<Color> result;
 
         public void Execute(int i) {
-            result[i].r = input[i * 3];
-            result[i].g = input[i * 3 + 1];
-            result[i].b = input[i * 3 + 2];
-            result[i].a = 1.0f;
+            float* src = (float*) (((byte*) input) + (i * inputByteStride));
+            result[i] = new Color {
+                r = src[0],
+                g = src[1],
+                b = src[2],
+                a = 1f
+            };
         }
     }
 
     public unsafe struct GetColorsVec3UInt8Job : IJobParallelFor {
 
         [ReadOnly]
-        [NativeDisableUnsafePtrRestriction]
-        public byte* input;
+        public int inputByteStride;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public Color32* result;
+        public byte* input;
+
+        [WriteOnly]
+        public NativeArray<Color> result;
 
         public void Execute(int i) {
-            result[i].r = input[i * 3];
-            result[i].g = input[i * 3 + 1];
-            result[i].b = input[i * 3 + 2];
-            result[i].a = 255;
+            byte* src = input + (i * inputByteStride);
+            result[i] = new Color {
+                r = src[0] / (float) byte.MaxValue,
+                g = src[1] / (float) byte.MaxValue,
+                b = src[2] / (float) byte.MaxValue,
+                a = 1f
+            };
         }
     }
 
     public unsafe struct GetColorsVec3UInt16Job : IJobParallelFor {
 
         [ReadOnly]
-        [NativeDisableUnsafePtrRestriction]
-        public System.UInt16* input;
+        public int inputByteStride;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public Color* result;
+        public ushort* input;
+
+        [WriteOnly]
+        public NativeArray<Color> result;
 
         public void Execute(int i) {
-            result[i].r = input[i * 3] / Constants.UINT16_MAX;
-            result[i].g = input[i * 3 + 1] / Constants.UINT16_MAX;
-            result[i].b = input[i * 3 + 2] / Constants.UINT16_MAX;
-            result[i].a = 1.0f;
+            ushort* src = (ushort*) (((byte*) input) + (i * inputByteStride));
+            result[i] = new Color {
+                r = src[i] / (float) ushort.MaxValue,
+                g = src[i+1] / (float) ushort.MaxValue,
+                b = src[i+2] / (float) ushort.MaxValue,
+                a = 1f
+            };
+        }
+    }
+
+    public unsafe struct GetColorsVec4FloatJob : IJobParallelFor {
+
+        [ReadOnly]
+        public int inputByteStride;
+
+        [ReadOnly]
+        [NativeDisableUnsafePtrRestriction]
+        public float* input;
+
+        [WriteOnly]
+        public NativeArray<Color> result;
+
+        public void Execute(int i) {
+            float* src = (float*) (((byte*) input) + (i * inputByteStride));
+            result[i] = new Color(
+                src[0],
+                src[1],
+                src[2],
+                src[3]
+            );
         }
     }
 
     public unsafe struct GetColorsVec4UInt16Job : IJobParallelFor {
 
         [ReadOnly]
-        [NativeDisableUnsafePtrRestriction]
-        public System.UInt16* input;
+        public int inputByteStride;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public Color* result;
+        public ushort* input;
+
+        [WriteOnly]
+        public NativeArray<Color> result;
 
         public void Execute(int i) {
-            result[i].r = input[i * 4] / Constants.UINT16_MAX;
-            result[i].g = input[i * 4 + 1] / Constants.UINT16_MAX;
-            result[i].b = input[i * 4 + 2] / Constants.UINT16_MAX;
-            result[i].a = input[i * 4 + 3] / Constants.UINT16_MAX;
+            ushort* src = (ushort*) (((byte*) input) + (i * inputByteStride));
+            result[i] = new Color {
+                r = src[i] / (float) ushort.MaxValue,
+                g = src[i+1] / (float) ushort.MaxValue,
+                b = src[i+2] / (float) ushort.MaxValue,
+                a = src[i+3] / (float) ushort.MaxValue
+            };
+        }
+    }
+    
+    public unsafe struct GetColorsVec4UInt8Job : IJobParallelFor {
+
+        [ReadOnly]
+        public int inputByteStride;
+
+        [ReadOnly]
+        [NativeDisableUnsafePtrRestriction]
+        public byte* input;
+
+        [WriteOnly]
+        public NativeArray<Color> result;
+
+        public void Execute(int i) {
+            byte* src = input + (i * inputByteStride);
+            result[i] = new Color {
+                r = src[i] / (float) byte.MaxValue,
+                g = src[i+1] / (float) byte.MaxValue,
+                b = src[i+2] / (float) byte.MaxValue,
+                a = src[i+3] / (float) byte.MaxValue
+            };
         }
     }
 
-#if !COPY_LEGACY
     public unsafe struct MemCopyJob : IJob {
 
         [ReadOnly]
@@ -531,24 +591,6 @@ namespace GLTFast.Jobs {
             );
         }
     }
-
-#else
-
-    public unsafe struct MemCopyLegacyJob : IJobParallelFor {
-
-        [ReadOnly]
-        [NativeDisableUnsafePtrRestriction]
-        public byte* input;
-
-        [ReadOnly]
-        [NativeDisableUnsafePtrRestriction]
-        public byte* result;
-
-        public void Execute(int i) {
-            result[i] = input[i];
-        }
-    }
-#endif
 
     public unsafe struct GetVector3sJob : IJobParallelFor {
         [ReadOnly]
@@ -668,7 +710,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.Int16* input;
+        public short* input;
 
         [ReadOnly]
         public int outputByteStride;
@@ -679,13 +721,13 @@ namespace GLTFast.Jobs {
 
         public void Execute(int i) {
             Vector4* resultV = (Vector4*) (((byte*)result) + (i*outputByteStride));
-            System.Int16* off = (System.Int16*) (((byte*)input) + (i*inputByteStride));
+            short* off = (short*) (((byte*)input) + (i*inputByteStride));
 
             Vector4 tmp;
-            tmp.x = -Mathf.Max( *off / Constants.INT16_MAX, -1f );
-            tmp.y = Mathf.Max( *(off+1) / Constants.INT16_MAX, -1f );
-            tmp.z = -Mathf.Max( *(off+2) / Constants.INT16_MAX, -1f );
-            tmp.w = Mathf.Max( *(off+3) / Constants.INT16_MAX, -1f );
+            tmp.x = -Mathf.Max( *off / (float) short.MaxValue, -1f );
+            tmp.y = Mathf.Max( *(off+1) / (float) short.MaxValue, -1f );
+            tmp.z = -Mathf.Max( *(off+2) / (float) short.MaxValue, -1f );
+            tmp.w = Mathf.Max( *(off+3) / (float) short.MaxValue, -1f );
             tmp.Normalize();
             *resultV = tmp;
         }
@@ -726,7 +768,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.UInt16* input;
+        public ushort* input;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
@@ -744,7 +786,7 @@ namespace GLTFast.Jobs {
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
-        public System.UInt16* input;
+        public ushort* input;
 
         [ReadOnly]
         [NativeDisableUnsafePtrRestriction]
@@ -753,9 +795,9 @@ namespace GLTFast.Jobs {
         public void Execute(int i) {
             // TODO: evaluate if the new mesh API supports uint16 positions and remove this Job
             Vector3 tmp;
-            tmp.x = input[i*3] / Constants.UINT16_MAX;
-            tmp.y = input[i*3+1] / Constants.UINT16_MAX;
-            tmp.z = -input[i*3+2] / Constants.UINT16_MAX;
+            tmp.x = input[i*3] / (float) ushort.MaxValue;
+            tmp.y = input[i*3+1] / (float) ushort.MaxValue;
+            tmp.z = -input[i*3+2] / (float) ushort.MaxValue;
             tmp.Normalize();
             result[i] = tmp;
         }
@@ -780,9 +822,9 @@ namespace GLTFast.Jobs {
         public void Execute(int i) {
             float* resultV = (float*) (((byte*)result) + (i*outputByteStride));
             byte* off = input + (inputByteStride*i);
-            *resultV = *((System.UInt16*)off);
-            *(resultV+1) = *(((System.UInt16*)off)+1);
-            *(resultV+2) = -*(((System.UInt16*)off)+2);
+            *resultV = *((ushort*)off);
+            *(resultV+1) = *(((ushort*)off)+1);
+            *(resultV+2) = -*(((ushort*)off)+2);
         }
     }
 
@@ -806,9 +848,9 @@ namespace GLTFast.Jobs {
             Vector3* resultV = (Vector3*) (((byte*)result) + (i*outputByteStride));
             byte* off = input + (inputByteStride*i);
             Vector3 tmp;
-            tmp.x = *(((System.UInt16*)off)) / Constants.UINT16_MAX;
-            tmp.y = *(((System.UInt16*)off)+1) / Constants.UINT16_MAX;
-            tmp.z = -*(((System.UInt16*)off)+2) / Constants.UINT16_MAX;
+            tmp.x = *(((ushort*)off)) / (float) ushort.MaxValue;
+            tmp.y = *(((ushort*)off)+1) / (float) ushort.MaxValue;
+            tmp.z = -*(((ushort*)off)+2) / (float) ushort.MaxValue;
             tmp.Normalize();
             *resultV = tmp;
         }
@@ -834,9 +876,9 @@ namespace GLTFast.Jobs {
         public void Execute(int i) {
             var resultV = (float*)  (((byte*)result) + (i*outputByteStride));
             byte* off = input + (i*inputByteStride);
-            *resultV = *(((System.Int16*)off));
-            *(resultV+1) = *(((System.Int16*)off)+1);
-            *(resultV+2) = -*(((System.Int16*)off)+2);
+            *resultV = *(((short*)off));
+            *(resultV+1) = *(((short*)off)+1);
+            *(resultV+2) = -*(((short*)off)+2);
         }
     }
 
@@ -861,9 +903,9 @@ namespace GLTFast.Jobs {
             byte* off = input + (i*inputByteStride);
 
             Vector3 tmp;
-            tmp.x = Mathf.Max( *(((System.Int16*)off)) / Constants.INT16_MAX, -1.0f);
-            tmp.y = Mathf.Max( *(((System.Int16*)off)+1) / Constants.INT16_MAX, -1.0f);
-            tmp.z = -Mathf.Max( *(((System.Int16*)off)+2) / Constants.INT16_MAX, -1.0f);
+            tmp.x = Mathf.Max( *(((short*)off)) / (float) short.MaxValue, -1.0f);
+            tmp.y = Mathf.Max( *(((short*)off)+1) / (float) short.MaxValue, -1.0f);
+            tmp.z = -Mathf.Max( *(((short*)off)+2) / (float) short.MaxValue, -1.0f);
             tmp.Normalize();
             *resultV = tmp;
         }
