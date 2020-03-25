@@ -1041,6 +1041,11 @@ namespace GLTFast {
                 var cluster = new Dictionary<Attributes, List<MeshPrimitive>>();
                 
                 foreach(var primitive in mesh.primitives) {
+                    
+                    if(!cluster.ContainsKey(primitive.attributes)) {
+                        cluster[primitive.attributes] = new List<MeshPrimitive>();
+                    }
+                    cluster[primitive.attributes].Add(primitive);
 #if DRACO_UNITY
                     var isDraco = primitive.isDracoCompressed;
                     if(isDraco) continue;
@@ -1049,26 +1054,15 @@ namespace GLTFast {
 #endif
                     var att = primitive.attributes;
                     if(primitive.indices>=0) {
-                        var usage = primitive.mode == DrawMode.Triangles
-                        || primitive.mode == DrawMode.TriangleStrip
-                        || primitive.mode == DrawMode.TriangleFan
-                        ? AccessorUsage.IndexFlipped : AccessorUsage.Index;
+                        var usage = (
+                            primitive.mode == DrawMode.Triangles
+                            || primitive.mode == DrawMode.TriangleStrip
+                            || primitive.mode == DrawMode.TriangleFan
+                            )
+                        ? AccessorUsage.IndexFlipped
+                        : AccessorUsage.Index;
                         SetAccessorUsage(primitive.indices, isDraco ? AccessorUsage.Ignore : usage );
                     }
-                    // SetAccessorUsage(att.POSITION, isDraco ? AccessorUsage.Ignore : AccessorUsage.Position);
-                    // if(att.NORMAL>=0)
-                    //     SetAccessorUsage(att.NORMAL, isDraco ? AccessorUsage.Ignore : AccessorUsage.Normal);
-                    // if(att.TEXCOORD_0>=0)
-                    //     SetAccessorUsage(att.TEXCOORD_0, isDraco ? AccessorUsage.Ignore : AccessorUsage.UV);
-                    // if(att.TANGENT>=0)
-                    //     SetAccessorUsage(att.TANGENT, isDraco ? AccessorUsage.Ignore : AccessorUsage.Tangent);
-                    // if(att.COLOR_0>=0)
-                    //     SetAccessorUsage(att.COLOR_0, isDraco ? AccessorUsage.Ignore : AccessorUsage.Color);
-
-                    if(!cluster.ContainsKey(primitive.attributes)) {
-                        cluster[primitive.attributes] = new List<MeshPrimitive>();
-                    }
-                    cluster[primitive.attributes].Add(primitive);
 
                     VertexBufferConfigBase config;
                     if(!vertexAttributes.TryGetValue(att,out config)) {
@@ -1175,7 +1169,11 @@ namespace GLTFast {
                     for (int primIndex = 0; primIndex < cluster.Count; primIndex++) {
                         var primitive = cluster[primIndex];
 #if DRACO_UNITY
-                        if( !primitive.isDracoCompressed )
+                        if (primitive.isDracoCompressed) {
+                            context = new PrimitiveDracoCreateContext();
+                            context.materials = new int[1];
+                        }
+                        else
 #endif
                         {
                             PrimitiveCreateContext c;
@@ -1230,10 +1228,8 @@ namespace GLTFast {
                         var primitive = cluster[primIndex];
 #if DRACO_UNITY
                         if( primitive.isDracoCompressed ) {
-                            var c = new PrimitiveDracoCreateContext();
+                            var c = (PrimitiveDracoCreateContext) context;
                             PreparePrimitiveDraco(gltf,mesh,primitive,ref c);
-                            c.materials = new int[1];
-                            context = c;
                         } else
 #endif
                         {
