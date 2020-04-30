@@ -55,7 +55,7 @@ namespace GLTFast
             gLTFastInstance = new GLTFast(this,downloadProvider,deferAgent);
             gLTFastInstance.onLoadComplete += OnLoadComplete;
             if (gltfBinary.HasValue) {
-                gLTFastInstance.Load(url, !gltfBinary.Value);
+                gLTFastInstance.Load(url, gltfBinary.Value);
             } else {
                 gLTFastInstance.Load(url);
             }
