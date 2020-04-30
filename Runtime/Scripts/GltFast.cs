@@ -66,7 +66,11 @@ namespace GLTFast {
             "KHR_materials_pbrSpecularGlossiness",
             "KHR_materials_unlit",
             "KHR_texture_transform",
-            "KHR_mesh_quantization"
+            "KHR_mesh_quantization",
+#if GLTFAST_FAKE_LIGHTS_PUNCTUAL
+             // We don't actually support but just lie and say we do so we can load the model anyway.
+            "KHR_lights_punctual"
+#endif
         };
 
         enum ChunkFormat : uint
