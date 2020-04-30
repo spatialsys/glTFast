@@ -141,6 +141,10 @@ namespace GLTFast {
         bool loadingError = false;
         public bool LoadingError { get { return loadingError; } private set { this.loadingError = value; } }
 
+        string loadingErrorMessage = null;
+        public string LoadingErrorMessage { get { return loadingErrorMessage; } private set { this.loadingErrorMessage = value; } }
+
+
         static string GetUriBase( string url ) {
             var uri = new Uri(url);
             return new Uri( uri, ".").AbsoluteUri;
@@ -180,14 +184,19 @@ namespace GLTFast {
             yield return download;
 
             if(download.success) {
-                if(gltfBinary) {
-                    LoadGlb(download.data,url);
-                } else {
-                    LoadGltf(download.text,url);
+                try {
+                    if(gltfBinary) {
+                        LoadGlb(download.data,url);
+                    } else {
+                        LoadGltf(download.text,url);
+                    }
+                } catch (System.Exception e) { 
+                    loadingError=true;
+                    LogAndSaveErrorFormat("{0}",e);
                 }
                 yield return LoadContent();
             } else {
-                Debug.LogErrorFormat("{0} {1}",download.error,url);
+                LogAndSaveErrorFormat("{0} {1}",download.error,url);
                 loadingError=true;
             }
 
@@ -236,6 +245,12 @@ namespace GLTFast {
             if(onLoadComplete!=null) {
                 onLoadComplete(success);
             }
+        }
+
+        void LogAndSaveErrorFormat(string format, params object[] args) {
+            string error = string.Format(format, args);
+            Debug.LogError(error);
+            loadingErrorMessage = error;
         }
 
         void ParseJsonAndLoadBuffers( string json, string baseUri ) {
@@ -335,16 +350,16 @@ namespace GLTFast {
                     if(!supported) {
 #if !DRACO_UNITY
                         if(ext==ExtDracoMeshCompression) {
-                            Debug.LogErrorFormat(ErrorPackageMissing,"DracoUnity",ext);
+                            LogAndSaveErrorFormat(ErrorPackageMissing,"DracoUnity",ext);
                         } else
 #endif
 #if !KTX_UNITY
                         if(ext==ExtTextureBasisu) {
-                            Debug.LogErrorFormat(ErrorPackageMissing,"KtxUnity",ext);
+                            LogAndSaveErrorFormat(ErrorPackageMissing,"KtxUnity",ext);
                         } else
 #endif
                         {
-                            Debug.LogErrorFormat("Required glTF extension {0} is not supported!",ext);
+                            LogAndSaveErrorFormat("Required glTF extension {0} is not supported!",ext);
                         }
                         return false;
                     }
@@ -445,12 +460,12 @@ namespace GLTFast {
                             continue;
                         }
                         if(imageFormats[i]!=ImageFormat.Unknown && imageFormats[i]!=imgFormat) {
-                            Debug.LogErrorFormat("Inconsistent embed image type {0}!={1}",imageFormats[i],imgFormat);
+                            LogAndSaveErrorFormat("Inconsistent embed image type {0}!={1}",imageFormats[i],imgFormat);
                         }
                         imageFormats[i] = imgFormat;
                         if(imageFormats[i]!=ImageFormat.Jpeg && imageFormats[i]!=ImageFormat.PNG) {
                             // TODO: support embed KTX textures
-                            Debug.LogErrorFormat("Unsupported embed image format {0}",imageFormats[i]);
+                            LogAndSaveErrorFormat("Unsupported embed image format {0}",imageFormats[i]);
                         }
                         // TODO: jobify (if Unity allows LoadImage to be off the main thread)
                         bool forceSampleLinear = imageGamma!=null && !imageGamma[i];
@@ -480,7 +495,7 @@ namespace GLTFast {
                                 }
                             } 
                         } else {
-                            Debug.LogErrorFormat("Unknown image format (image {0};uri:{1})",i,img.uri);
+                            LogAndSaveErrorFormat("Unknown image format (image {0};uri:{1})",i,img.uri);
                         }
                     }
                 }
@@ -928,7 +943,7 @@ namespace GLTFast {
                         go.transform.localRotation = m.rotation;
                         go.transform.localScale = m.lossyScale;
                     } else {
-                        Debug.LogErrorFormat("Invalid matrix on node {0}",nodeIndex);
+                        LogAndSaveErrorFormat("Invalid matrix on node {0}",nodeIndex);
                         Profiler.EndSample();
                         loadingError = true;
                         return;
@@ -1265,7 +1280,7 @@ namespace GLTFast {
         void SetAccessorUsage(int index, AccessorUsage newUsage) {
 #if UNITY_EDITOR
             if(accessorUsage[index]!=AccessorUsage.Unknown && newUsage!=accessorUsage[index]) {
-                Debug.LogErrorFormat("Inconsistent accessor usage {0} != {1}", accessorUsage[index], newUsage);
+                LogAndSaveErrorFormat("Inconsistent accessor usage {0} != {1}", accessorUsage[index], newUsage);
             }
 #endif
             accessorUsage[index] = newUsage;
@@ -1368,15 +1383,15 @@ namespace GLTFast {
                 c.topology = MeshTopology.Triangles;
                 break;
             case DrawMode.Points:
-                Debug.LogErrorFormat(ErrorUnsupportedPrimitiveMode,primitive.mode);
+                LogAndSaveErrorFormat(ErrorUnsupportedPrimitiveMode,primitive.mode);
                 c.topology = MeshTopology.Points;
                 break;
             case DrawMode.Lines:
-                Debug.LogErrorFormat(ErrorUnsupportedPrimitiveMode,primitive.mode);
+                LogAndSaveErrorFormat(ErrorUnsupportedPrimitiveMode,primitive.mode);
                 c.topology = MeshTopology.Lines;
                 break;
             case DrawMode.LineLoop:
-                Debug.LogErrorFormat(ErrorUnsupportedPrimitiveMode,primitive.mode);
+                LogAndSaveErrorFormat(ErrorUnsupportedPrimitiveMode,primitive.mode);
                 c.topology = MeshTopology.LineStrip;
                 break;
             case DrawMode.LineStrip:
@@ -1385,7 +1400,7 @@ namespace GLTFast {
             case DrawMode.TriangleStrip:
             case DrawMode.TriangleFan:
             default:
-                Debug.LogErrorFormat(ErrorUnsupportedPrimitiveMode,primitive.mode);
+                LogAndSaveErrorFormat(ErrorUnsupportedPrimitiveMode,primitive.mode);
                 c.topology = MeshTopology.Triangles;
                 break;
             }
@@ -1615,7 +1630,7 @@ namespace GLTFast {
                 break;
             default:
                 jobHandle = null;
-                Debug.LogErrorFormat( ErrorUnsupportedType, "UV", uvAccessor.componentType);
+                LogAndSaveErrorFormat( ErrorUnsupportedType, "UV", uvAccessor.componentType);
                 break;
             }
             Profiler.EndSample();
@@ -1723,7 +1738,7 @@ namespace GLTFast {
                 }
                 break;
             default:
-                Debug.LogErrorFormat( "Invalid index format {0}", accessor.componentType );
+                LogAndSaveErrorFormat( "Invalid index format {0}", accessor.componentType );
                 jobHandle = null;
                 break;
             }
@@ -1977,7 +1992,7 @@ namespace GLTFast {
                     jobHandle = jobTangentByte.Schedule(accessor.count,DefaultBatchCount);
                     break;
                 default:
-                    Debug.LogErrorFormat( ErrorUnsupportedType, "Tangent", accessor.componentType);
+                    LogAndSaveErrorFormat( ErrorUnsupportedType, "Tangent", accessor.componentType);
                     jobHandle = null;
                     break;
             }
@@ -2060,7 +2075,7 @@ namespace GLTFast {
                         }
                         break;
                     default:
-                        Debug.LogErrorFormat(ErrorUnsupportedColorFormat, colorAccessor.componentType);
+                        LogAndSaveErrorFormat(ErrorUnsupportedColorFormat, colorAccessor.componentType);
                         break;
                 }
             }
@@ -2128,11 +2143,11 @@ namespace GLTFast {
                         }
                         break;
                     default:
-                        Debug.LogErrorFormat(ErrorUnsupportedColorFormat, colorAccessor.componentType);
+                        LogAndSaveErrorFormat(ErrorUnsupportedColorFormat, colorAccessor.componentType);
                         break;
                 }
             } else {
-                Debug.LogErrorFormat( ErrorUnsupportedType, "color accessor", colorAccessor.typeEnum);
+                LogAndSaveErrorFormat( ErrorUnsupportedType, "color accessor", colorAccessor.typeEnum);
             }
             Profiler.EndSample();
         }

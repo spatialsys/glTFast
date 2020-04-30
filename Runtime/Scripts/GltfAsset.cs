@@ -29,6 +29,8 @@ namespace GLTFast
 
         public UnityAction<GltfAsset,bool> onLoadComplete;
 
+        public string loadingErrorMessage = null;
+
 
         /// <summary>
         /// Method for manual loading with custom <see cref="IDeferAgent"/>.
@@ -63,6 +65,8 @@ namespace GLTFast
             gLTFastInstance.onLoadComplete -= OnLoadComplete;
             if(success) {
                 gLTFastInstance.InstantiateGltf(transform);
+            } else {
+                loadingErrorMessage = gLTFastInstance.LoadingErrorMessage;
             }
             if(onLoadComplete!=null) {
                 onLoadComplete(this,success);
