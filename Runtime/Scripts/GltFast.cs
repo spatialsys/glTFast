@@ -167,6 +167,10 @@ namespace GLTFast {
                 int getIndex = url.LastIndexOf('?');
                 gltfBinary = getIndex>=0 && url.Substring(getIndex-GLB_EXT.Length,GLB_EXT.Length).Equals(GLB_EXT,StringComparison.OrdinalIgnoreCase);
             }
+            Load(url, gltfBinary);
+        }
+
+        public void Load( string url, bool gltfBinary ) {
             monoBehaviour.StartCoroutine(LoadRoutine(url,gltfBinary));
         }
 

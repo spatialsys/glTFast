@@ -36,9 +36,9 @@ namespace GLTFast
         /// <param name="url">URL of the glTF file.</param>
         /// <param name="deferAgent">Defer Agent takes care of interrupting the
         /// loading procedure in order to keep the frame rate responsive.</param>
-        public void Load( string url, IDownloadProvider downloadProvider=null, IDeferAgent deferAgent=null ) {
+        public void Load( string url, IDownloadProvider downloadProvider=null, IDeferAgent deferAgent=null, bool? gltfBinary=null ) {
             this.url = url;
-            Load(downloadProvider,deferAgent);
+            Load(downloadProvider,deferAgent, gltfBinary);
         }
 
         void Start()
@@ -49,10 +49,14 @@ namespace GLTFast
             }
         }
 
-        void Load( IDownloadProvider downloadProvider=null, IDeferAgent deferAgent=null ) {
+        void Load( IDownloadProvider downloadProvider=null, IDeferAgent deferAgent=null, bool? gltfBinary=null ) {
             gLTFastInstance = new GLTFast(this,downloadProvider,deferAgent);
             gLTFastInstance.onLoadComplete += OnLoadComplete;
-            gLTFastInstance.Load(url);
+            if (gltfBinary.HasValue) {
+                gLTFastInstance.Load(url, !gltfBinary.Value);
+            } else {
+                gLTFastInstance.Load(url);
+            }
         }
 
         protected virtual void OnLoadComplete(bool success) {
