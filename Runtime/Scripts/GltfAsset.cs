@@ -64,7 +64,12 @@ namespace GLTFast
         protected virtual void OnLoadComplete(bool success) {
             gLTFastInstance.onLoadComplete -= OnLoadComplete;
             if(success) {
-                gLTFastInstance.InstantiateGltf(transform);
+                try {
+                    gLTFastInstance.InstantiateGltf(transform);
+                } catch (System.Exception e) {
+                    loadingErrorMessage = string.Format("{0}", e);
+                    success = false;
+                }
             } else {
                 loadingErrorMessage = gLTFastInstance.LoadingErrorMessage;
             }
